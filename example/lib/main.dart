@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:smart_app_review_gate/smart_app_review_gate.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 void main() => runApp(const DemoApp());
 
@@ -23,9 +24,9 @@ class _DemoAppState extends State<DemoApp> {
       config: const ReviewGateConfig(
         minSessions: 1,
         minDays: 0,
-        cooldownDays: 0,
+        cooldownDays: 0,              // testing ke liye 0
         askAtEvents: {'order_success': 2},
-        debugShowMockPrompt: false, // show our custom 2-button prompt in debug
+        debugShowMockPrompt: false,   // custom 2-button prompt dikhega
       ),
     );
     gate.trackAppOpen();
@@ -41,7 +42,7 @@ class _DemoAppState extends State<DemoApp> {
         body: Builder(
           builder: (ctx) => Center(
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 450),
+              constraints: const BoxConstraints(maxWidth: 480),
               child: Card(
                 elevation: 1,
                 margin: const EdgeInsets.all(16),
@@ -51,8 +52,7 @@ class _DemoAppState extends State<DemoApp> {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Text('Demo controls',
-                          style: Theme.of(ctx).textTheme.titleLarge),
+                      Text('Demo controls', style: Theme.of(ctx).textTheme.titleLarge),
                       const SizedBox(height: 8),
                       Row(
                         children: [
@@ -79,8 +79,9 @@ class _DemoAppState extends State<DemoApp> {
                           setState(() => orderSuccessCount++);
                           ScaffoldMessenger.of(ctx)
                             ..clearSnackBars()
-                            ..showSnackBar(const SnackBar(
-                                content: Text('Logged: order_success')));
+                            ..showSnackBar(
+                              const SnackBar(content: Text('Logged: order_success')),
+                            );
                         },
                         label: const Text('Simulate success event'),
                       ),
@@ -92,20 +93,21 @@ class _DemoAppState extends State<DemoApp> {
                           setState(() => eligible = can);
                           ScaffoldMessenger.of(ctx)
                             ..clearSnackBars()
-                            ..showSnackBar(
-                                SnackBar(content: Text('shouldAsk: $can')));
+                            ..showSnackBar(SnackBar(content: Text('shouldAsk: $can')));
                         },
                         label: const Text('Check eligibility'),
                       ),
                       const SizedBox(height: 8),
                       FilledButton.icon(
                         icon: const Icon(Icons.reviews),
-                        onPressed: () => gate.ask(ctx),
+                        onPressed: () => gate.ask(
+                          ctx,
+                          onNegativeFeedback: handleNegativeFeedback, // EMAIL callback
+                        ),
                         label: const Text('Ask now'),
                       ),
                       const Divider(height: 24),
-                      Text('Debug helpers',
-                          style: Theme.of(ctx).textTheme.titleMedium),
+                      Text('Debug helpers', style: Theme.of(ctx).textTheme.titleMedium),
                       const SizedBox(height: 8),
                       Wrap(
                         spacing: 8,
@@ -116,11 +118,9 @@ class _DemoAppState extends State<DemoApp> {
                             label: const Text('Reset demo state'),
                             onPressed: () async {
                               final s = SharedPrefsReviewGateStore();
-                              await s.setInstallAt(
-                                  DateTime.now().subtract(const Duration(days: 10)));
+                              await s.setInstallAt(DateTime.now().subtract(const Duration(days: 10)));
                               await s.setSessionCount(5);
-                              await s.setLastAskedAt(
-                                  DateTime.now().subtract(const Duration(days: 9999)));
+                              await s.setLastAskedAt(DateTime.now().subtract(const Duration(days: 9999)));
                               await s.setLastOutcome('none');
                               await s.setEventCounts({});
                               setState(() {
@@ -129,8 +129,7 @@ class _DemoAppState extends State<DemoApp> {
                               });
                               ScaffoldMessenger.of(ctx)
                                 ..clearSnackBars()
-                                ..showSnackBar(
-                                    const SnackBar(content: Text('State reset')));
+                                ..showSnackBar(const SnackBar(content: Text('State reset')));
                             },
                           ),
                         ],
@@ -147,6 +146,30 @@ class _DemoAppState extends State<DemoApp> {
   }
 }
 
+/// Negative feedback → email compose open
+Future<void> handleNegativeFeedback(BuildContext ctx, ReviewContext rc) async {
+  const supportEmail = 'support@yourapp.com'; // <-- apna email lagao
+  final subject = Uri.encodeComponent('App feedback');
+  final body = Uri.encodeComponent(
+    'Please describe the issue:\n'
+        '\n---\n'
+        'Meta:\n'
+        'Installed: ${rc.installAt}\n'
+        'Sessions: ${rc.sessionCount}\n'
+        'Last asked: ${rc.lastAskedAt}\n'
+        'Last outcome: ${rc.lastOutcome}\n'
+        'Events: ${rc.eventCounts}\n',
+  );
+
+  final uri = Uri.parse('mailto:$supportEmail?subject=$subject&body=$body');
+  final ok = await launchUrl(uri);
+  if (!ok) {
+    ScaffoldMessenger.of(ctx).showSnackBar(
+      const SnackBar(content: Text("Couldn't open email app.")),
+    );
+  }
+}
+
 class _StatTile extends StatelessWidget {
   final String label;
   final String value;
@@ -157,16 +180,20 @@ class _StatTile extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
-        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+        // surfaceContainerHighest ho sakta hai aapke Flutter me na ho;
+        // isliye surfaceVariant use kar rahe hain (widely supported).
+        color: Theme.of(context).colorScheme.surfaceVariant,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label,
-              style: Theme.of(context)
-                  .textTheme
-                  .labelSmall
-                  ?.copyWith(color: Theme.of(context).colorScheme.outline)),
+          Text(
+            label,
+            style: Theme.of(context)
+                .textTheme
+                .labelSmall
+                ?.copyWith(color: Theme.of(context).colorScheme.outline),
+          ),
           const SizedBox(height: 4),
           Text(value, style: Theme.of(context).textTheme.titleLarge),
         ],
