@@ -40,9 +40,9 @@ class ReviewGate {
   }
 
   Future<void> ask(
-      BuildContext context, {
-        Future<void> Function(BuildContext, ReviewContext)? onNegativeFeedback,
-      }) async {
+    BuildContext context, {
+    Future<void> Function(BuildContext, ReviewContext)? onNegativeFeedback,
+  }) async {
     if (config.debugShowMockPrompt) {
       await _showMockFlow(context);
       return;
@@ -103,18 +103,25 @@ class ReviewGate {
     await store.setLastOutcome(_outcomeToString(outcome));
   }
 
-  String _outcomeToString(LastOutcome o) =>
-      o == LastOutcome.positive ? 'positive' : o == LastOutcome.negative ? 'negative' : 'none';
+  String _outcomeToString(LastOutcome o) => o == LastOutcome.positive
+      ? 'positive'
+      : o == LastOutcome.negative
+          ? 'negative'
+          : 'none';
 
-  LastOutcome _outcomeFrom(String s) =>
-      s == 'positive' ? LastOutcome.positive : s == 'negative' ? LastOutcome.negative : LastOutcome.none;
+  LastOutcome _outcomeFrom(String s) => s == 'positive'
+      ? LastOutcome.positive
+      : s == 'negative'
+          ? LastOutcome.negative
+          : LastOutcome.none;
 
   Future<void> _defaultFeedbackDialog(BuildContext context) async {
     await showDialog<void>(
       context: context,
       builder: (ctx) => const AlertDialog(
         title: Text('Thanks for the feedback'),
-        content: Text('Please share details via support so we can fix issues faster.'),
+        content: Text(
+            'Please share details via support so we can fix issues faster.'),
       ),
     );
   }
@@ -124,7 +131,8 @@ class ReviewGate {
       context: context,
       builder: (ctx) => const AlertDialog(
         title: Text('Mock Review'),
-        content: Text('Debug build: a native review prompt would appear in a store-delivered build.'),
+        content: Text(
+            'Debug build: a native review prompt would appear in a store-delivered build.'),
       ),
     );
   }

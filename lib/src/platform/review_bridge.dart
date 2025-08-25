@@ -13,7 +13,9 @@ class ReviewBridge {
       await _review.openStoreListing();
       return false;
     } catch (_) {
-      try { await _review.openStoreListing(); } catch (_) {}
+      try {
+        await _review.openStoreListing();
+      } catch (_) {}
       return false;
     }
   }

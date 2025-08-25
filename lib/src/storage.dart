@@ -74,7 +74,7 @@ class SharedPrefsReviewGateStore implements IReviewGateStore {
   Future<Map<String, int>> getEventCounts() async {
     final sp = await SharedPreferences.getInstance();
     final keys =
-    sp.getKeys().where((k) => k.startsWith('$_kEventCounts:')).toList();
+        sp.getKeys().where((k) => k.startsWith('$_kEventCounts:')).toList();
     final map = <String, int>{};
     for (final k in keys) {
       map[k.substring(_kEventCounts.length + 1)] = sp.getInt(k) ?? 0;
@@ -86,7 +86,7 @@ class SharedPrefsReviewGateStore implements IReviewGateStore {
   Future<void> setEventCounts(Map<String, int> map) async {
     final sp = await SharedPreferences.getInstance();
     final keys =
-    sp.getKeys().where((k) => k.startsWith('$_kEventCounts:')).toList();
+        sp.getKeys().where((k) => k.startsWith('$_kEventCounts:')).toList();
     for (final k in keys) {
       await sp.remove(k);
     }
